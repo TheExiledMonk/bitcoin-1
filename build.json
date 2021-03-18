@@ -1,0 +1,201 @@
+{
+	"BuildSystem": "Ubuntu20.04",
+	"ScriptVersion": "0.5",
+	"BuildService": "CloudCompile",
+	"ServiceURL": "https://xxx.xxx.xxx",
+	"NAME": "Hemis",
+	"Repo_Service": "github",
+	"Repo": "https://github.com/TheExiledMonk/Hemis.git",
+	"Commit_Target": "master",
+	"Release_Name": "Name of release",
+	"Release_body": "Body text",
+	"PreRelease": true,
+	"Version": "1.0.0",
+	"Build_Targets":
+	[
+		{"BUILD_TARGET": "linux64"},
+		{"BUILD_TARGET": "windows64"},
+		{"BUILD_TARGET": "mac"},
+		{"BUILD_TARGET": "arm"}
+	],
+	"Setup":
+	{
+		"Setup_Build_Environment":
+		{
+			"CMD": 
+			[
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade git wget unzip && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade g++ && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade autotools-dev libtool m4 automake autoconf pkg-config && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade zlib1g-dev libssl1.0-dev curl ccache bsdmainutils cmake && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade python3 python3-dev && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade python3-pip python3-setuptools && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade build-essential && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "pip3 install pyzmq"},
+				{"RUN":  "pip3 install jinja2"},
+				{"RUN": "snap install ccache --classic"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade g++-7-multilib && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade g++-arm-linux-gnueabihf && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade g++-mingw-w64-i686 && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade wine-stable wine64 bc nsis && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade python3-zmq && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "apt-get update && apt-get install -y --no-install-recommends --no-upgrade imagemagick libcap-dev librsvg2-bin libz-dev libbz2-dev libtiff-tools && rm -rf /var/lib/apt/lists/*"},
+				{"RUN":  "update-alternatives --set x86_64-w64-mingw32-gcc  /usr/bin/x86_64-w64-mingw32-gcc-posix"},
+				{"RUN":  "update-alternatives --set x86_64-w64-mingw32-g++  /usr/bin/x86_64-w64-mingw32-g++-posix"},
+				{"RUN":  "mkdir /hemis-src /cache/ccache /cache/depends /cache/sdk-sources"},
+				{"RUN": "curl --location --fail $SDK_URL/MacOSX${OSX_SDK}.sdk.tar.gz -o depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz"},
+				{"RUN": "tar -C depends/SDKs -xf depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz"}
+			],
+			"EXPORTS": 	
+			[
+				{"BUILD_TARGET": "${BUILD_TARGET:-linux64}"},
+				{"PULL_REQUEST": "${PULL_REQUEST:-false}"},
+				{"JOB_NUMBER": "${JOB_NUMBER:-1}"},
+				{"HOST_SRC_DIR": "${HOST_SRC_DIR:-$(pwd)}"},
+				{"HOST_CACHE_DIR": "${HOST_CACHE_DIR:-$(pwd)/ci-cache-$BUILD_TARGET}"},
+				{"SRC_DIR": "${SRC_DIR:-$HOST_SRC_DIR}"},
+				{"BUILD_DIR": "$SRC_DIR"},
+				{"OUT_DIR": "$BUILD_DIR/out"},
+				{"CACHE_DIR": "${CACHE_DIR:-$HOST_CACHE_DIR}"},
+				{"CCACHE_DIR": "$CACHE_DIR/ccache"},
+				{"GOAL": "install"},
+				{"SDK_URL": "${SDK_URL:-https://bitcoincore.org/depends-sources/sdks}"},
+				{"MAKEJOBS": "-j$(nproc --all)"},
+				{"RUN_UNITTESTS": "false"},
+				{"RUN_INTEGRATIONTESTS": "false"},
+				{"CCACHE_COMPRESS": "${CCACHE_COMPRESS:-1}"},
+				{"CCACHE_SIZE": "${CCACHE_SIZE:-400M}"},
+				{"BITCOIN_CONFIG_ALL": "--disable-tests --disable-bench --disable-man --disable-dependency-tracking --prefix=$BUILD_DIR/depends/$HOST --bindir=$OUT_DIR/bin --libdir=$OUT_DIR/lib"}
+			]
+		}
+	},
+	"Targets":
+	{
+		"arm-linux":
+		{
+			"EXPORTS":
+			[
+				{"BUILD_TARGET": "arm-linux"},
+				{"HOST": "arm-linux-gnueabihf"},
+				{"BITCOIN_CONFIG": "--enable-glibc-back-compat --enable-reduce-exports CXXFLAGS=-Wno-psabi"}
+			]
+		},
+		"win32":
+		{
+			"EXPORTS":
+			[
+				{"BUILD_TARGET": "win32"},
+				{"HOST": "i686-w64-mingw32"},
+  				{"DPKG_ADD_ARCH": "i386"},
+  				{"BITCOIN_CONFIG": "--enable-gui --enable-reduce-exports --disable-miner"},
+  				{"DIRECT_WINE_EXEC_TESTS": "true"},
+  				{"RUN_UNITTESTS": "true"}
+			]
+		},
+		"win64":
+		{
+
+			"EXPORTS":	
+			[
+				{"BUILD_TARGET": "win64"},
+				{"HOST": "x86_64-w64-mingw32"},
+				{"DPKG_ADD_ARCH":"i386"},
+ 				{"BITCOIN_CONFIG":"--enable-gui --enable-reduce-exports --disable-miner"},
+ 				{"DIRECT_WINE_EXEC_TESTS": "false"},
+ 				{"RUN_UNITTESTS": "false"}
+			]
+		},
+		"linux32":
+		{
+			"EXPORTS":
+			[
+				{"BUILD_TARGET": "linux32"},
+				{"HOST": "i686-pc-linux-gnu"},
+				{"BITCOIN_CONFIG": "--enable-zmq --enable-glibc-back-compat --enable-reduce-exports --enable-stacktraces LDFLAGS=-static-libstdc++"},
+				{"USE_SHELL": "/bin/dash"},
+				{"PYZMQ": "true"},
+				{"RUN_UNITTESTS": "true"},
+				{"RUN_INTEGRATIONTESTS": "true"}
+			]
+		},
+		"linux64":
+		{
+			"EXPORTS":
+			[
+				{"BUILD_TARGET": "linux64"},
+				{"HOST": "x86_64-unknown-linux-gnu"},
+				{"DEP_OPTS": "NO_UPNP=1 DEBUG=1"},
+				{"BITCOIN_CONFIG": "--enable-zmq --enable-glibc-back-compat --enable-reduce-exports --enable-stacktraces"},
+				{"CPPFLAGS": "-DDEBUG_LOCKORDER"},
+				{"PYZMQ": "true"},
+				{"RUN_UNITTESTS": "true"},
+				{"RUN_INTEGRATIONTESTS": "true"}
+			]
+		},
+		"linux64_nowallet":
+		{
+			"EXPORTS":
+			[
+				{"BUILD_TARGET": "linux64_nowallet"},
+		  		{"HOST": "x86_64-unknown-linux-gnu"},
+				{"DEP_OPTS": "NO_WALLET=1"},
+				{"BITCOIN_CONFIG": "--enable-glibc-back-compat --enable-reduce-exports"},
+				{"RUN_UNITTESTS": "true"}
+  			]
+  		},
+  		"linux64_release":
+  		{
+  			"EXPORTS":
+  			[
+  				{"BUILD_TARGET": "linux64_release"},
+  				{"HOST": "x86_64-unknown-linux-gnu"},
+				{"DEP_OPTS": "NO_UPNP=1"},
+				{"BITCOIN_CONFIG": "--enable-zmq --enable-glibc-back-compat --enable-reduce-exports"},
+				{"PYZMQ": "true"},
+				{"RUN_UNITTESTS": "true"}
+  			]
+  		},
+  		"mac":
+  		{
+  			"EXPORTS":
+  			[
+  				{"BUILD_TARGET": "mac"},
+  				{"HOST": "x86_64-apple-darwin11"},
+				{"BITCOIN_CONFIG": "--enable-gui --enable-reduce-exports --disable-miner"},
+				{"OSX_SDK": "10.11"},
+				{"GOAL": "deploy"}
+  			]
+  		}
+	},
+	"Build":
+	{
+		"Build_Dependent":
+		[
+			{"RUN": "set -e"},
+			{"RUN": "source ./ci/matrix.sh"},
+			{"RUN": "unset CC; unset CXX"},
+			{"RUN": "unset DISPLAY"},
+			{"RUN": "mkdir -p $CACHE_DIR/depends"},
+			{"RUN": "mkdir -p $CACHE_DIR/sdk-sources"},
+			{"RUN": "ln -s $CACHE_DIR/depends depends/built"},
+			{"RUN": "ln -s $CACHE_DIR/sdk-sources depends/sdk-sources"},
+			{"RUN": "mkdir -p depends/SDKs"},
+			{"RUN": "make -s $MAKEJOBS -C depends HOST=$HOST $DEP_OPTS"}
+		],
+		"Build_Source":
+		[
+			{"RUN": "unset CC; unset CXX"},
+			{"RUN": "ccache --max-size=$CCACHE_SIZE"},
+			{"RUN": "rm -rf build-ci"},
+			{"RUN": "mkdir build-ci"},
+			{"RUN": "cd build-ci"},
+			{"RUN": "../configure --cache-file=config.cache $BITCOIN_CONFIG_ALL $BITCOIN_CONFIG || ( cat config.log && false)"},
+			{"RUN": "make -s $MAKEJOBS $GOAL || ( echo \"Build failure. Verbose build follows.\" && make $GOAL V=1 ; false )"},
+			{"RUN": "zip -r $NAME-$BUILD_TARGET-$JOB_NUMBER.zip $OUTDIR/*"}
+		],
+		"Upload":
+		[
+			{"github": "$SRC_DIR/$NAME-$BUILD_TARGET-$VERSION.zip"}
+		]
+	}
+}
